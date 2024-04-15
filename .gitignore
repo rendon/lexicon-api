@@ -34,3 +34,5 @@
 .idea
 config/ssl/lexicon.local.crt
 config/ssl/lexicon.local.key
+certs/*.key
+certs/*.crt
