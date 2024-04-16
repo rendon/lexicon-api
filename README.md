@@ -1,6 +1,11 @@
 # Lexeme API
 
 ## Develop
+Export the API_KEY:
+```sh
+export API_KEY='...'
+```
+
 Run the server:
 ```sh
 bin/rails server
@@ -25,5 +30,7 @@ chmod 644 certs/*
 2. Build image and run container
 ```sh
 docker build -t lexeme-api .
-docker run -d --name lexeme-api -p 3001:3001 -e SECRET_KEY_BASE=<secret-key> lexeme-api
+docker run -d --name lexeme-api -p 3001:3001 -e SECRET_KEY_BASE=<secret-key> -e API_KEY=<api_key> lexeme-api
 ```
+
+NOTE: API_KEY is a temporary unique key required to work with the service.

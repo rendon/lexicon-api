@@ -1,5 +1,6 @@
 class LexemesController < ApplicationController
   before_action :set_lexeme, only: %i[ show update destroy ]
+  before_action :check_api_key, except: %i[ index show ]
 
   # GET /lexemes
   def index
@@ -59,6 +60,12 @@ class LexemesController < ApplicationController
         params.require(:lexeme).permit(:name, :definition, :source, :created_at, :updated_at)
       else
         params.require(:lexeme).permit(:name, :definition, :source)
+      end
+    end
+
+    def check_api_key
+      unless ENV['API_KEY'] == request.headers.fetch('X-API-KEY', '')
+        render json: {message: 'Invalid API key' }, status: :forbidden
       end
     end
 end
