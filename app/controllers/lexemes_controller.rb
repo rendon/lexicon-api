@@ -1,6 +1,6 @@
 class LexemesController < ApplicationController
-  before_action :set_lexeme, only: %i[ show update destroy ]
-  before_action :check_api_key, except: %i[ index show ]
+  before_action :set_lexeme, only: %i[show update destroy]
+  before_action :check_api_key, except: %i[index show]
 
   # GET /lexemes
   def index
@@ -19,7 +19,7 @@ class LexemesController < ApplicationController
     @lexeme = Lexeme.new(lexeme_params)
 
     if Lexeme.find_by(name: lexeme_params[:name])
-      render json: {message: 'Lexeme already exists' }, status: :bad_request
+      render json: { message: 'Lexeme already exists' }, status: :bad_request
       return
     end
 
@@ -45,27 +45,32 @@ class LexemesController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_lexeme
-      if params[:id] =~ /^\d+$/
-        @lexeme = Lexeme.find(params[:id])
-      else
-        @lexeme = Lexeme.find_by(name: params[:id])
-      end
+
+  # Use callbacks to share common setup or constraints between actions.
+  def set_lexeme
+    if params[:id] =~ /^\d+$/
+      @lexeme = Lexeme.find(params[:id])
+    else
+      @lexeme = Lexeme.find_by(name: params[:id])
     end
 
-    # Only allow a list of trusted parameters through.
-    def lexeme_params
-      if params[:lexeme][:created_at] && params[:lexeme][:updated_at]
-        params.require(:lexeme).permit(:name, :definition, :source, :created_at, :updated_at)
-      else
-        params.require(:lexeme).permit(:name, :definition, :source)
-      end
-    end
+    return @lexeme unless @lexeme.nil?
 
-    def check_api_key
-      unless ENV['API_KEY'] == request.headers.fetch('X-API-KEY', '')
-        render json: {message: 'Invalid API key' }, status: :forbidden
-      end
+    render json: { message: 'Not found' }, status: :not_found
+  end
+
+  # Only allow a list of trusted parameters through.
+  def lexeme_params
+    if params[:lexeme][:created_at] && params[:lexeme][:updated_at]
+      params.require(:lexeme).permit(:name, :definition, :source, :created_at, :updated_at)
+    else
+      params.require(:lexeme).permit(:name, :definition, :source)
     end
+  end
+
+  def check_api_key
+    unless ENV['API_KEY'] == request.headers.fetch('X-API-KEY', '')
+      render json: {message: 'Invalid API key' }, status: :forbidden
+    end
+  end
 end
