@@ -1,60 +1,93 @@
 # syntax = docker/dockerfile:1
+FROM ubuntu:22.04 as base
 
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.3.0
-FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+SHELL ["/bin/bash", "-c"]
+
+# Build dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        curl \
+        gcc \
+        make \
+        libssl-dev \
+        zlib1g-dev \
+        tig \
+        zip \
+        unzip \
+        libreadline-dev \
+        locales locales-all
+
+# Install packages needed to build gems
+RUN apt-get install --no-install-recommends -y build-essential git libvips42 pkg-config libyaml-dev\
+        libmysqlclient-dev
+
+# Install packages needed for deployment
+RUN apt-get install --no-install-recommends -y curl libsqlite3-0
+
+RUN useradd rails --create-home --shell /bin/bash
+
+################################################################################
+USER rails:rails
+################################################################################
+# Get ruby installer
+RUN curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+ENV PATH /home/rails/.rbenv/shims:/home/rails/.rbenv/bin:$PATH
+RUN curl -fsSL https://github.com/rbenv/rbenv-installer/raw/main/bin/rbenv-doctor | bash
+
+# Set ruby version
+ARG RUBY_VERSION=3.0.1
+
+RUN rbenv install ${RUBY_VERSION}
+RUN rbenv global ${RUBY_VERSION}
+
+################################################################################
+USER root
+################################################################################
+
+
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+
 
 # Rails app lives here
-WORKDIR /rails
+WORKDIR /home/rails/app
+# Copy application code
+COPY . .
+
+# Run and own only the runtime files as a non-root user for security
+#RUN chown -R rails:rails db log storage tmp
+RUN chown -R rails:rails db log storage tmp vendor
+
+RUN touch .ruby-version && mkdir .bundle/
+RUN chown rails:rails .ruby-version .bundle
+
+################################################################################
+USER rails:rails
+################################################################################
+RUN rbenv local ${RUBY_VERSION}
 
 # Set production environment
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development"
 
 
-# Throw-away build stage to reduce size of final image
 FROM base as build
 
-# Install packages needed to build gems
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libvips pkg-config
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
+RUN bundle install
+RUN rm -rf ~/.bundle/
+RUN bundle exec bootsnap precompile --gemfile
 
-# Copy application code
-COPY . .
 
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-
-# Final stage for app image
-FROM base
-
-# Install packages needed for deployment
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libsqlite3-0 libvips && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Copy built artifacts: gems, application
-COPY --from=build /usr/local/bundle /usr/local/bundle
-COPY --from=build /rails /rails
-
-# Run and own only the runtime files as a non-root user for security
-RUN useradd rails --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
-USER rails:rails
-
-# Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+FROM build
 
 # Start the server by default, this can be overwritten at runtime
-EXPOSE 3000
 EXPOSE 3001
-CMD ["./bin/rails", "server"]
+CMD ["./bin/wait-for-it.sh", "dbserver:3306", "--", "./bin/start-service.sh"]
