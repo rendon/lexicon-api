@@ -2,7 +2,7 @@ class CreateLexemes < ActiveRecord::Migration[7.1]
   def change
     create_table :lexemes do |t|
       t.string :name
-      t.string :definition
+      t.text :definition
       t.string :source
 
       t.timestamps
