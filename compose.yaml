@@ -5,6 +5,8 @@ services:
       - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysqldata:/var/lib/mysql
   api:
     build: .
     ports:
@@ -13,9 +15,7 @@ services:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - API_KEY=${API_KEY}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-    volumes:
-      - mysql-data:/var/lib/mysql
     depends_on:
       - dbserver
 volumes:
-  mysql-data:
+  mysqldata:
