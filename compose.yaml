@@ -13,5 +13,9 @@ services:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - API_KEY=${API_KEY}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+    volumes:
+      - mysql-data:/var/lib/mysql
     depends_on:
       - dbserver
+volumes:
+  mysql-data:

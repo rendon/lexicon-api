@@ -90,4 +90,4 @@ FROM build
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3001
-CMD ["./bin/wait-for-it.sh", "dbserver:3306", "--", "./bin/start-service.sh"]
+CMD ["./bin/wait-for-it.sh", "-t", "30", "dbserver:3306", "--", "./bin/start-service.sh"]
