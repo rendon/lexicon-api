@@ -1,7 +1,6 @@
 class StatsController < ApplicationController
   def index
-    count = Lexeme.count
-    stats = [{ name: 'Count', value: count }]
+    stats = [{ name: 'Count', value: Lexeme.count }]
     render json: stats
   end
 end
