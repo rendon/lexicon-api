@@ -2,6 +2,7 @@
 FROM rendon/ruby:latest AS base
 
 USER root
+RUN apt update
 RUN apt install -y libmysqlclient-dev
 
 ENV LC_ALL en_US.UTF-8
