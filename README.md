@@ -1,5 +1,8 @@
 # Lexeme API
 
+## TODO
+- Figure out how to build dependencies in a container and copy the lock file back into the host for version control.
+
 ## Develop
 Export the API_KEY:
 ```sh
